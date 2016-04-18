@@ -318,7 +318,7 @@ class BaristaServer:
 class Customer:
     """ Class used to model a passenger in our simulation
     """
-    def __init__(self, system_time, customer_type, customer_class, system_iteration, relative_time):
+    def __init__(self, system_time, customer_class, system_iteration, relative_time):
         self.system_time_entered = system_time
         self.customer_class = customer_class
         self.system_iteration = system_iteration
@@ -416,52 +416,34 @@ class Simulation:
 
         # Barista Servers
         self.BARISTA_server01 = BaristaServer()
-        self.security_servers = [self.BARISTA_server01]
+        self.barista_servers = [self.BARISTA_server01]
         # All servers
         self.servers = [self.CASHIER_server01,
                         self.BARISTA_server01]
 
-        #-----GATE-----
-        self.commuter_passengers_at_gate = 0
-        self.international_passengers_at_gate = 0
-        self.commuter_passengers_at_gate_list = []
-
-
-        #-----FLIGHTS-----
-        # HOW TO DEAL WITH INTERNATIONAL PASSENGERS WHO MISS THEIR FLIGHT?
-        # Relative time vs. system time....
-        self.time_until_commuter_flight = 30.00      # at start of simulation we are 30 mins until a commmuter flight
-        self.time_until_international_flight = 0.00  # at start of simulation we have just had an int'l flight
-        self.international_flight_departures = 0
-        self.commuter_flight_departures = 0
 
 
         #----INTERNAL_DATA COLLECTION-----
         self.total_cashier_customers_arrived = 0
-        self.total_cashier_customers_departed = 0
+        self.total_cashier_customers_serviced = 0
         self.total_barista_customers_arrived = 0
-        self.total_barista_customers_departed = 0
+        self.total_barista_customers_serviced = 0
         self.customers_combined = 0
         # Then counters to see how far people are making it in the system....
         # Averaged data
         self.time_in_system = []
-        self.time_in_system_first_class = []
-        self.avg_time_in_system = 0 # Later, should be sum(self.time_until_international_flight)
-        self.avg_time_in_system_first_class = []
-        self.time_in_system_coach = []
-        self.time_in_system_commuter = []
-        self.likelihood_intl_passenger_catches_plane = 0
-        self.avg_wait_time_at_commuter_gate = 0
-        self.INTL_passengers_who_missed_flight_and_not_refunded_time_arrived_before = []
+        self.time_in_system_CASHIER = []
+        self.avg_time_in_system = 0
+        self.avg_time_in_system_CASHIER = []
+        self.time_in_system_BARISTA = []
 
 
         #-----INTERNAL MECHANISMS------
-        self.data_users_added_to_COACH_CHECKIN_QUEUE = 0
-        self.data_users_added_to_FIRSTCLASS_CHECKIN_QUEUE = 0
-        self.data_users_added_to_COACH_SECURITY_QUEUE = 0
+        self.data_users_added_to_REGISTER_QUEUE = 0
+        self.data_users_added_to_BARISTA_QUEUE = 0
         self.data_users_added_to_FIRSTCLASS_SECURITY_QUEUE = 0
-        self.data_users_moved_to_COMMUTER_GATE = 0
-        self.data_users_moved_to_INTL_GATE = 0
+        self.data_CASHIER_customers_moved_to_EXIT = 0
+        self.data_BARISTA_customers_moved_to_EXIT = 0
         self.data_users_currently_in_system = 0
         self.total_server_idle_time = 0.0
 
@@ -496,8 +478,6 @@ class Simulation:
         """ Looks at all arrival lists, and if there is new arrival at the current system time,
             creates a passenger object for use in the system, and places it in the check-in queue
         """
-        current_time = self.system_time
-        current_flight = self.hours_passed
         relative_time = self.relative_global_time
 
 
@@ -506,8 +486,8 @@ class Simulation:
             # Then get next available item from INTL FIRST CLASS ARRIVALS
             if self.barista_ARRIVALS[0] <= relative_time:
                 # create passenger, put it in first class check in queue
-                new_customer = Customer(self.system_time, "barista", "barista", self.hours_passed,
-                                          self.barista_ARRIVALS[0])
+                new_customer = Customer(self.system_time, "barista", self.hours_passed,
+                                        self.barista_ARRIVALS[0])
                 self.register_QUEUE.add_customer(new_customer)
                 # pop from the list
                 self.barista_ARRIVALS.pop(0)
@@ -518,8 +498,8 @@ class Simulation:
             # Then get next available item from COMMUTER COACH CLASS ARRIVALS
             if self.cashier_ARRIVALS[0] <= relative_time:
                 # create passenger, put it in coach class check in queue
-                new_customer = Customer(self.system_time, "cashier", "cashier", self.hours_passed,
-                                          self.cashier_ARRIVALS[0])
+                new_customer = Customer(self.system_time, "cashier", self.hours_passed,
+                                        self.cashier_ARRIVALS[0])
                 self.register_QUEUE.add_customer(new_customer)
                 # pop from the list
                 self.cashier_ARRIVALS.pop(0)
@@ -570,42 +550,37 @@ class Simulation:
                     # but first make sure that the passenger does not == None
                     if my_customer.customer_class == "cashier":
                         # add to end of simulation
-                        self.move_to_GATE()
-                        # else, add to barista queue
+                        self.data_CASHIER_customers_moved_to_EXIT += 1
+                        # data collection for coach
+                        time_in_system = self.system_time - my_customer.system_time_entered
+                        self.time_in_system.append(time_in_system)
+                        self.time_in_system_CASHIER.append(time_in_system)
+                        # data collection for commuters
+                        self.time_in_system_CASHIER.append(time_in_system)
+                     # else, add to barista queue
                     else:
-                        # because if they are NOT coach, they must be first class
+                        # because if they are NOT cashier customers, they must be barista customers
                         self.barista_QUEUE.add_customer(my_customer)
 
 
-    def move_to_SECURITY_server(self):
+    def move_to_BARISTA_server(self):
         """ If servers are not busy, advance next passenger in the security queue to to security server
         """
         # step through all the security servers and check if they are busy
-        for server in self.security_servers:
+        for server in self.barista_servers:
             # if the server isn't busy, we can take the next passenger from security queue
             # and put him in the server
             if not server.is_busy():
-            #if not server.last_customer_served.empty():
-                # if server is first class, take a passenger from the first class security queue
-                if server.is_first_class == True:
-                    # first make sure it's not empty
-                    if not self.barista_QUEUE.queue.empty():
-                        # and if it's not, grab the next passenger out of it
-                        next_passenger = self.barista_QUEUE.queue.get()
-                        self.barista_QUEUE.queue.task_done()
-                        # And move that passenger into the available security server
-                        server.add_customer(next_passenger)
-                # else, take the passenger from the commuter class security queue
-                else:
-                    # first make sure it's not empty
-                    if not self.coach_class_security_QUEUE.queue.empty():
-                        # and if it's not, grab the next passenger out of it
-                        next_passenger = self.coach_class_security_QUEUE.queue.get()
-                        self.coach_class_security_QUEUE.queue.task_done()
-                        # And move that passenger into the available security server
-                        server.add_customer(next_passenger)
+                # first make sure it's not empty
+                if not self.barista_QUEUE.queue.empty():
+                    # and if it's not, grab the next passenger out of it
+                    next_customer = self.barista_QUEUE.queue.get()
+                    self.barista_QUEUE.queue.task_done()
+                    # And move that passenger into the available security server
+                    server.add_customer(next_customer)
 
-    def move_to_GATE(self):
+
+    def move_to_EXIT(self):
         """ Look at Security servers, and if they are NOT busy, someone just finished security screening.
             This means they've completed the queuing process.
             ---
@@ -616,149 +591,26 @@ class Simulation:
                 - If no:   They go to international gate
         """
         # step through all the security servers
-        for server in self.security_servers:
+        for server in self.barista_servers:
             # if the server is NOT busy
             #if not server.is_busy():
             #if not server.last_customer_served.empty():
                 # passenger has completed queuing phase, and can move to gate.
                 # but first, we need to check if they are commuters or international flyers
                 # and in each case, need to handle that accordingly
-                next_passenger = server.complete_service()
+                next_customer = server.complete_service()
                 # first make sure that the passenger isn't a NONE
-                if not next_passenger == None:
+                if not next_customer == None:
                     # if the passenger is a commuter, they just go to gate
-                    if next_passenger.type_of_flight == "commuter":
-                        self.commuter_passengers_at_gate += 1
-                        self.data_users_moved_to_COMMUTER_GATE += 1
-                        self.commuter_passengers_at_gate_list.append(self.system_time)
+                    if next_customer.type_customer == "barista":
+                        self.data_BARISTA_customers_moved_to_EXIT += 1
                         # data collection for coach
-                        time_in_system = self.system_time - next_passenger.system_time_entered
+                        time_in_system = self.system_time - next_customer.system_time_entered
                         self.time_in_system.append(time_in_system)
-                        self.time_in_system_coach.append(time_in_system)
+                        self.time_in_system_BARISTA.append(time_in_system)
                         # data collection for commuters
-                        self.time_in_system_commuter.append(time_in_system)
-                        self.time_in_system_coach.append(time_in_system)
-                    # else, they are international travelers, and we need to check if they missed their flight
-                    else:
-                        self.check_if_international_passenger_missed_flight(next_passenger)
+                        self.time_in_system_BARISTA.append(time_in_system)
 
-    def check_if_international_passenger_missed_flight(self, passenger_to_check):
-        """ Checks if an international passenger that has completed this gauntlet is on time!
-        """
-        # first, check if they made their flight --> is TRUE if the system iteration equals current flight number
-        if passenger_to_check.international_flight_number == self.hours_passed:
-            self.international_passengers_at_gate += 1
-            self.data_users_moved_to_INTL_GATE += 1
-        # ----BELOW HERE, MISSED FLIGHT-------
-        # Else, check if they arrived more than 90 minutes BEFORE their flight
-        elif passenger_to_check.gets_refund == True:
-            # handle refund issue
-            self.data_num_international_that_passengers_missed_flight += 1
-            self.issue_refund(passenger_to_check)
-        # ELSE:  if they DON'T get a refund, and they missed their flight... they just leave.
-        #        by not moving them to the international passenger gate, they are effectively exiting the system.
-        #        That is, they are no longer accounted for at all.
-        else:
-            self.data_num_international_that_passengers_missed_flight += 1
-            time_arrived_BEFORE_flight = passenger_to_check.system_time_entered/passenger_to_check.international_flight_number
-            self.INTL_passengers_who_missed_flight_and_not_refunded_time_arrived_before.append(time_arrived_BEFORE_flight)
-
-        # for everyone --> collect data, so we can compare
-        if passenger_to_check.flight_class == "coach":
-            self.total_intl_coach_passengers_departed += 1
-            # data collection
-            time_in_system = self.system_time - passenger_to_check.system_time_entered
-            self.time_in_system.append(time_in_system)
-            self.time_in_system_coach.append(time_in_system)
-        else:
-            self.total_barista_customers_departed += 1
-            # data collection
-            time_in_system = self.system_time - passenger_to_check.system_time_entered
-            self.time_in_system.append(time_in_system)
-            self.time_in_system_first_class.append(time_in_system)
-
-    def issue_refund(self, passenger):
-        """ Issue a refund to international passengers who missed flight,
-            but arrived more than 90 minutes early
-        """
-        self.refunds_issued += 1
-        if passenger.flight_class == "coach":
-            self.revenue_total -= self.intl_coach_ticket_price
-            self.coach_class_intl_revenue -= self.intl_coach_ticket_price
-            self.money_lost_to_refunds += self.intl_coach_ticket_price
-        else:
-            self.revenue_total -= self.intl_first_class_ticket_price
-            self.first_class_intl_revenue -= self.intl_first_class_ticket_price
-            self.money_lost_to_refunds += self.intl_first_class_ticket_price
-
-    def check_if_commuter_plane_departs(self):
-        """ Models departure of a commuter plane. Occurs every 30 mins. takes 50 people from the GATE for commuters.
-        """
-        # If system_time/30.0 is an integer --> commuter plane is departing
-        if self.time_until_commuter_flight <= 0.0:
-            # and we take 50 passengers at the commuter gate
-            self.commuter_passengers_at_gate -= 50
-            # if we take too many passengers putting the gate count into negatives,
-            # set the number at gate back to zero
-            if self.commuter_passengers_at_gate < 0:
-                self.commuter_passengers_at_gate = 0
-
-            # reset counter
-            self.time_until_commuter_flight = 60.0
-            self.commuter_flight_departures += 1
-
-            # find out how long each passenger we take has been waiting
-            current_system_time = self.system_time
-            passenger_wait_time_for_group = 0
-            line_length = len(self.commuter_passengers_at_gate_list)
-            counter = 0
-            for passenger in range(0,50):
-                if passenger < line_length:
-                    counter += 1
-                    time_arrived_at_gate = self.commuter_passengers_at_gate_list[0]
-                    passenger_wait_time_for_group += current_system_time - time_arrived_at_gate
-                    self.commuter_passengers_at_gate_list.pop(0)
-            if counter > 0:
-                group_average = passenger_wait_time_for_group/counter
-                self.total_cashier_customers_departed += counter
-                self.avg_wait_time_at_commuter_gate += group_average
-
-
-    def check_if_international_plane_departs(self):
-        """ Models departure of an international plane. Occurs every 6 hours. Takes EVERYONE at gate.
-        """
-        # If system_time/360.0 is an integer --> then an international plane is departing
-        if self.time_until_international_flight <= 0.0:
-            # update our data set, to be sure all is working
-            self.customers_combined += self.international_passengers_at_gate
-
-            # and we take everyone at the international gate
-            self.international_passengers_at_gate = 0
-
-            # reset counter
-            self.time_until_international_flight = 360.0
-            self.international_flight_departures += 1
-
-
-    def every_six_hours_deduct_operating_costs(self):
-        """ Deducts operating costs of flights and servers for past 6 hours.
-        """
-        num_servers = 0
-        for server in self.check_in_servers:
-          num_servers += 1
-
-        total_hours_worked = num_servers * 6
-        total_operating_costs = total_hours_worked * self.cost_per_server
-
-        self.wages_paid += total_operating_costs
-
-    def at_end_of_simulation_deduct_flight_costs(self):
-        cost_of_domestic_flights = params.OPERATING_COST_FOR_DOMESTIC_FLIGHT * self.commuter_flight_departures
-        cost_of_intl_flights = params.OPERATING_COST_FOR_INTL_FLIGHT * self.international_flight_departures
-        print "Cost of domestic flights="+str(cost_of_domestic_flights)
-        print "Cost of international flights="+str(cost_of_intl_flights)
-        self.revenue_total -= cost_of_domestic_flights
-        self.revenue_total -= cost_of_intl_flights
 
     def advance_system_time(self):
         """ Advances the system time by delta --> .01 of a minute
@@ -777,43 +629,15 @@ class Simulation:
 
         # increment the system time by delta
         self.system_time += self.delta
-        self.time_until_commuter_flight -= self.delta
-        self.time_until_international_flight -= self.delta
+        self.time_until_next_arrival_generation -= self.delta
 
         # keep track of relative global time
         self.relative_global_time += self.delta
-        if self.relative_global_time >= 360.0:
+        if self.relative_global_time >= 60.0:
             self.relative_global_time = 0.0
 
         #print "gets system time update"
-        """ Old version, just shifting order to see if we can fix why no one
-            can move past the CHECK IN SERVERS. Think the updates aren't timed correctly.
 
-
-        # skip these on the first iteration because we don't have data yet
-        if not self.international_flight_number == 0:
-            # update all the servers
-            self.update_servers()
-            #print "gets past update server"
-
-            # check arrivals, and if someone should enter the system, put them in the correct check-in queue
-            # And, if we can move someone to any of the check in servers, do it
-            self.update_check_in_queues()
-            #print "updates check in queues"
-
-            # and if we can, move passengers to the security server
-            self.move_to_SECURITY_server()
-            #print "moves to security server"
-
-            # update then the security queues
-            self.update_security_queues()
-            #print "updates security queues"
-
-            # if we can move everyone to gate, do it
-            self.move_to_GATE()
-            #print "moves to gate"
-
-        """
         # skip these on the first iteration because we don't have data yet
         if not self.hours_passed == 0:
 
@@ -821,25 +645,20 @@ class Simulation:
             # start by updating the servers
             self.update_servers()
             # then, if we can pull someone FROM a sever, while not busy, do it
-            self.move_to_GATE()
+            self.move_to_EXIT()
             self.update_barista_queues()
             # then get passengers from arrivals, and fill the queues
             self.collect_and_create_passengers_from_arrivals()
             # then move people into any empty spots in the servers
-            self.move_to_SECURITY_server()
+            self.move_to_BARISTA_server()
             self.move_to_CASHIER_server()
 
         # every six hours, generate new arrivals,
         # and perform accounting procedures on ticket
         # for those arrivals
-        if self.time_until_international_flight <= 0:
+        if self.time_until_next_arrival_generation <= 0:
             self.generate_ONE_HOUR_of_arrivals()
-            self.collect_revenue()
-            self.every_six_hours_deduct_operating_costs()
 
-        # check if planes should be departing
-        self.check_if_commuter_plane_departs()
-        self.check_if_international_plane_departs()
         #print "checks if planes depart"
 
         # print self.system_time
@@ -854,7 +673,7 @@ class Simulation:
         while self.system_time < simulation_time_in_minutes:
             # then, advance system time by delta:  0.01
             self.advance_system_time()
-        self.at_end_of_simulation_deduct_flight_costs()
+
         print "SIMULATION COMPLETE:"
         print "Total revenue collected="+str(self.revenue_total)
 
@@ -881,12 +700,12 @@ class Simulation:
         print "#-----System Info-----"
         print "Note: --> 'ARRIVED' means 'entered system' ;;; 'DEPARTED' means 'left system', whether a flight was made OR missed."
         print "Total COMMUTER passengers ARRIVED="+str(self.total_cashier_customers_arrived)
-        print "Total COMMUTER passengers DEPARTED="+str(self.total_cashier_customers_departed)
+        print "Total COMMUTER passengers DEPARTED="+str(self.total_cashier_customers_serviced)
         print "Total INTERNATIONAL first class passengers ARRIVED="+str(self.total_barista_customers_arrived)
-        print "Total INTERNATIONAL first class passengers DEPARTED="+str(self.total_barista_customers_departed)
+        print "Total INTERNATIONAL first class passengers DEPARTED="+str(self.total_barista_customers_serviced)
         print "Total INTERNATIONAL coach class passengers ARRIVED="+str(self.total_intl_coach_passengers_arrived)
         print "Total INTERNATIONAL coach class passengers DEPARTED="+str(self.total_intl_coach_passengers_departed)
-        total_intl_departs = self.total_barista_customers_departed + self.total_intl_coach_passengers_departed
+        total_intl_departs = self.total_barista_customers_serviced + self.total_intl_coach_passengers_departed
         print "Total INTERNATIONAL passengers (all types) DEPARTED="+str(total_intl_departs)
         print "-------Averages-------"
         sum_time_in_system = sum(self.time_in_system)
@@ -899,9 +718,9 @@ class Simulation:
         self.time_in_system.sort(reverse=True)
         longest_time_in_system = self.time_in_system.pop(0)
         print "Longest time in system="+str(longest_time_in_system)
-        average_time_in_system_first_class = sum(self.time_in_system_first_class)/len(self.time_in_system_first_class)
+        average_time_in_system_first_class = sum(self.time_in_system_CASHIER) / len(self.time_in_system_CASHIER)
         print "AVG Time in system FIRST CLASS="+str(average_time_in_system_first_class)
-        average_time_in_system_coach = sum(self.time_in_system_coach)/len(self.time_in_system_coach)
+        average_time_in_system_coach = sum(self.time_in_system_BARISTA) / len(self.time_in_system_BARISTA)
         print "AVG Time in system all COACH="+str(average_time_in_system_coach)
         average_time_in_system_commuters = sum(self.time_in_system_commuter)/len(self.time_in_system_commuter)
         print "AVG Time in system COMMUTERS="+str(average_time_in_system_commuters)
@@ -913,8 +732,8 @@ class Simulation:
         print "Users added to COACH SecurityQueue="+str(self.coach_class_security_QUEUE.customers_added)
         print "Users added to FIRSTCLASS SecurityQueue="+str(self.barista_QUEUE.customers_added)
         print "......Stage 3......."
-        print "Users moved to INTL_GATE="+str(self.data_users_moved_to_INTL_GATE)
-        print "Users moved to COMMUTER GATE="+str(self.data_users_moved_to_COMMUTER_GATE)
+        print "Users moved to INTL_GATE="+str(self.data_BARISTA_customers_moved_to_EXIT)
+        print "Users moved to COMMUTER GATE="+str(self.data_CASHIER_customers_moved_to_EXIT)
         print ". . . . didn't make it . . . . ."
         still_in_system = 0
         for queue in self.queues:
@@ -932,7 +751,7 @@ class Simulation:
               "the flight was scheduled to depart: "+str(360 - self.INTL_passengers_who_missed_flight_and_not_refunded_time_arrived_before.pop(0))
 
         print "======= GOALS ========"
-        self.likelihood_intl_passenger_catches_plane = self.data_users_moved_to_INTL_GATE / float(self.data_users_moved_to_INTL_GATE + self.data_num_international_that_passengers_missed_flight)
+        self.likelihood_intl_passenger_catches_plane = self.data_BARISTA_customers_moved_to_EXIT / float(self.data_BARISTA_customers_moved_to_EXIT + self.data_num_international_that_passengers_missed_flight)
         print "Likelihood that INTERNATIONAL Passenger catches plane="+str(self.likelihood_intl_passenger_catches_plane)
         self.avg_wait_time_at_commuter_gate = self.avg_wait_time_at_commuter_gate/self.commuter_flight_departures
         print "Post-Security Wait Time for COMMUTER Passengers, AVG="+str(self.avg_wait_time_at_commuter_gate)
