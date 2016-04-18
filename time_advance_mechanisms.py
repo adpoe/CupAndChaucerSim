@@ -98,6 +98,10 @@ class CheckInQueue:
             next_customer = None
         return next_customer
 
+
+#------------------#
+#   C&C Queues     #
+#------------------#
 class RegisterQueue:
     """ Class used to model a register line Queue
     """
@@ -117,7 +121,28 @@ class RegisterQueue:
             next_customer = None
         return next_customer
 
+class BaristaQueue:
+    """ Class used to model a register line Queue
+    """
+    def __init__(self):
+        self.queue = q.Queue()
+        self.customers_added = 0
 
+    def add_customer(self, new_customer):
+        self.queue.put_nowait(new_customer)
+        self.customers_added += 1
+
+    def get_next_customer_in_line(self):
+        if not self.queue.empty():
+            next_customer = self.queue.get_nowait()
+            self.queue.task_done()
+        else:
+            next_customer = None
+        return next_customer
+
+#                    #
+#   End C&C Queues   #
+#                    #
 
 ##########################
 #### SECURITY QUEUES #####
@@ -346,6 +371,206 @@ class SecurityServer:
         return next_customer
 
 
+###########################
+######  C&C SERVERS  ######
+###########################
+class CashierServer:
+    """ Class used to model a server at the Check-in terminal
+    """
+    def __init__(self):
+        """ Initialize the class variables
+        """
+        #----COMMENTED OUT ARE FOR PREVIOUS VERSION-----
+        self.service_time = 0.0
+        self.busy = False
+        # self.customer = None
+        self.customer_being_served = q.Queue()
+        self.customers_added = 0
+        self.customers_served = 0
+        # self.last_customer_served = q.Queue()
+        self.idle_time = 0.00
+
+    def set_service_time(self):
+        """ Sets the service time for a new passenger
+        :param passenger_type:  either "commuter" or "international"
+        """
+        self.service_time = cc.gen_cashier_service_time()
+        self.busy = True
+
+    def update_service_time(self):
+        """ Updates the service time and tells us if the server is busy or not
+        """
+        self.service_time -= 0.01
+
+        if self.service_time <= 0:
+            self.service_time = 0
+            self.busy = False
+            # ------COMMENTED OUT FOR PREVIOUS VERSION-----
+            # self.last_customer_served.put(self.customer)
+
+        if not self.is_busy():
+            self.idle_time += 0.01
+
+    def is_busy(self):
+        """ Call this after updating the service time at each change in system time (delta). Tells us if server is busy.
+        :return: True if server is busy. False if server is NOT busy.
+        """
+        return self.busy
+
+    def add_customer(self, new_passenger):
+        """ Adds a customer to the sever and sets his service time
+        :param new_passenger: the passenger we are adding
+        """
+        #-----PREVIOUS VERSION---
+        # self.customer = new_passenger
+        # self.set_service_time(new_passenger.type_of_flight)
+        # self.customers_added += 1
+
+        # NEW VERSION
+        # get the type of flight his passenger is on
+        # add the passenger to our service queue
+        self.customer_being_served.put_nowait(new_passenger)
+        # set the service time, depending on what type of flight the customer is on
+        self.set_service_time()
+        # update the count of customers added
+        self.customers_added += 1
+
+
+    def complete_service(self):
+        """ Models completion of our service
+        :return: the customer who has just finished at this station
+        """
+        #------PREVIOUS VERSION------
+        # completed_customer = None
+        # if not self.last_customer_served.empty():
+        #     completed_customer = self.last_customer_served.get_nowait()
+        #     self.last_customer_served.task_done()
+        # if not completed_customer == None:
+        #     self.customers_served += 1
+        # return completed_customer
+        next_customer = None
+        # only try to pull a customer from the queue if we are NOT busy
+        # AND the queue isn't empty
+        # else we just return a None
+        if not self.is_busy() and not self.customer_being_served.empty():
+            next_customer = self.customer_being_served.get_nowait()
+            self.customer_being_served.task_done()
+            self.customers_served += 1
+        else:
+            next_customer = None
+        return next_customer
+
+
+class BaristaServer:
+    """ Class used to model a server at the Security terminal
+    """
+    def __init__(self):
+        """ Initialize the class variables
+        """
+        #-----PREVIOUS VERSION------
+        #self.service_time = 0.0
+        #self.busy = None
+        #self.customer = None
+        #self.is_first_class = False
+        #self.customers_added = 0
+        #self.customers_served = 0
+        # vvv This can be a list, and we can stop the BS
+        #self.last_customer_served = q.Queue()
+        #self.last_customer_returned = None
+        #self.redundant = None
+
+        self.service_time = 0.0
+        self.busy = None
+        # self.customer = None
+        self.customer_being_served = q.Queue()
+        self.is_barista_class = False
+        self.customers_added = 0
+        self.customers_served = 0
+        self.idle_time = 0.0
+
+    def set_service_time(self):
+        """ Sets the service time for a new passenger
+        :param passenger_type:  either "commuter" or "international"
+        """
+        self.service_time = cc.gen_barista_service_time()
+        self.busy = True
+
+    def update_service_time(self):
+        """ Updates the service time and tells us if the server is busy or not
+        """
+        self.service_time -= 0.01
+
+        if self.service_time <= 0:
+            self.service_time = 0
+            self.busy = False
+        #------PREVIOUS VERSION------
+        #    self.last_customer_served.put(self.customer)
+
+        if not self.is_busy():
+            self.idle_time += 0.01
+
+    def is_busy(self):
+        """ Call this after updating the service time at each change in system time (delta). Tells us if server is busy.
+        :return: True if server is busy. False if server is NOT busy.
+        """
+        return self.busy
+
+    def add_customer(self, new_customer):
+        """ Adds a customer to the sever and sets his service time
+        :param new_passenger: the passenger we are adding
+        """
+        #-----PREVIOUS VERSION-----
+        #self.customer = new_passenger
+        #self.set_service_time()
+        #self.customers_added += 1
+        # NEW VERSION
+        # add the passenger to our service queue
+        self.customer_being_served.put_nowait(new_customer)
+        # set the service time, depending on what type of flight the customer is on
+        self.set_service_time()
+        # update the count of customers added
+        self.customers_added += 1
+
+    def complete_service(self):
+        """ Models completion of our service
+        :return: the customer who has just finished at this station
+        """
+        # comment this stuff out and try again....
+        # do the tests... make sure they pass...
+        # then do passenger class tests....
+        # then start on the individual tests for the Simulation Class
+        # Run simulation first once though, to see what all breaks...
+
+        #-------PREVIOUS VERSION
+        #matches_redundant = False
+        # redundant = previous completed customer
+        #self.redundant = self.last_customer_returned
+        # then try to get a new one
+        #completed_customer = None
+        #if not self.last_customer_served.empty():
+        #    completed_customer = self.last_customer_served.get_nowait()
+        #    self.last_customer_served.task_done()
+        #    if not self.redundant is None and not completed_customer is None:
+        #        matches_redundant = str(completed_customer.system_time_entered) == str(self.redundant.system_time_entered)
+        #if not completed_customer is None and not matches_redundant:
+        #    self.customers_served += 1
+        #if matches_redundant:
+        #    return None
+        #self.last_customer_returned = completed_customer
+        #return completed_customer
+        next_customer = None
+        # only try to pull a customer from the queue if we are NOT busy
+        # AND the queue isn't empty
+        # else we just return a None
+        if not self.is_busy() and not self.customer_being_served.empty():
+            next_customer = self.customer_being_served.get_nowait()
+            self.customer_being_served.task_done()
+            self.customers_served += 1
+        else:
+            next_customer = None
+        return next_customer
+
+
 
 ##############################
 ##### AIRPORT PASSENGERS #####
@@ -389,6 +614,46 @@ class Passenger:
     def __hash__(self):
         """Override the default hash behavior (that returns the id or the object)"""
         return hash(tuple(sorted(self.__dict__.items())))
+
+
+#############################
+######  C&C CUSTOMERS  ######
+#############################
+class Customer:
+    """ Class used to model a passenger in our simulation
+    """
+    def __init__(self, system_time, customer_type, customer_class, system_iteration, relative_time):
+        self.system_time_entered = system_time
+        self.customer_class = customer_class
+        self.system_iteration = system_iteration
+        self.relative_time = relative_time
+        #--------DEBUGGING-------
+        #if flight_type == "international" and system_time > 1490:
+        #    print "here"
+        #
+        #confirm_system_time = (system_time / system_iteration)
+        #confirm_relative_time = str(relative_time)
+        #relative_system_time = system_time / (system_iteration * 360.0)
+        #if not str(math.floor((system_time / system_iteration))) == str(math.floor(relative_time)):
+        #    print "something's off."
+        #------------------------
+
+    def __eq__(self, other):
+        """Override the default Equals behavior"""
+        if isinstance(other, self.__class__):
+            return self.__dict__ == other.__dict__
+        return NotImplemented
+
+    def __ne__(self, other):
+        """Define a non-equality test"""
+        if isinstance(other, self.__class__):
+            return not self.__eq__(other)
+        return NotImplemented
+
+    def __hash__(self):
+        """Override the default hash behavior (that returns the id or the object)"""
+        return hash(tuple(sorted(self.__dict__.items())))
+
 
 ##########################
 #### SIMULATION CLASS ####
