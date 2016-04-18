@@ -40,23 +40,6 @@ Need to account for:
 ###########################
 ### ARRIVAL GENERATION ####
 ###########################
-class Arrivals:
-    """ Class used to generate six hours of arrivals at a time
-    """
-    def __init__(self):
-        self.commuter_coach_arrivals = []
-        self.intl_coach_arrivals = []
-        self.intl_first_class_arrivals = []
-
-    def get_arrivals(self):
-        """ Get all the arrivals to the system in the next six hours. Store the values in instance vars.
-        """
-        self.commuter_coach_arrivals = ag.generate_six_hours_of_commuter_arrivals()
-        self.intl_coach_arrivals = ag.generate_six_hours_coach_intl_arrivals()
-        self.intl_first_class_arrivals = ag.generate_six_hours_first_class_intl_arrivals()
-
-
-
 class CupChaucArrivals():
     """ Class used to generate one hour of arrivals at a time
     """
@@ -79,25 +62,6 @@ class CupChaucArrivals():
 ##########################
 #### CHECK-IN QUEUES #####
 ##########################
-class CheckInQueue:
-    """ Class used to model a check-in line Queue
-    """
-    def __init__(self):
-        self.queue = q.Queue()
-        self.customers_added = 0
-
-    def add_passenger(self, new_passenger):
-        self.queue.put_nowait(new_passenger)
-        self.customers_added += 1
-
-    def get_next_passenger_in_line(self):
-        if not self.queue.empty():
-            next_customer = self.queue.get_nowait()
-            self.queue.task_done()
-        else:
-            next_customer = None
-        return next_customer
-
 
 #------------------#
 #   C&C Queues     #
@@ -144,231 +108,7 @@ class BaristaQueue:
 #   End C&C Queues   #
 #                    #
 
-##########################
-#### SECURITY QUEUES #####
-##########################
 
-""" Again, may need to add a GET method here, as well
-"""
-class SecurityQueue:
-    """ Class used to model a security line Queue
-    """
-    def __init__(self):
-        self.queue = q.Queue()
-        self.customers_added = 0
-
-    def add_passenger(self, new_passenger):
-        self.queue.put(new_passenger)
-        self.customers_added += 1
-
-    def get_next_passenger_in_line(self):
-        if not self.queue.empty():
-            next_customer = self.queue.get_nowait()
-            self.queue.task_done()
-        else:
-            next_customer = None
-        return next_customer
-
-###########################
-##### AIRPORT SERVERS #####
-###########################
-class CheckInServer:
-    """ Class used to model a server at the Check-in terminal
-    """
-    def __init__(self):
-        """ Initialize the class variables
-        """
-        #----COMMENTED OUT ARE FOR PREVIOUS VERSION-----
-        self.service_time = 0.0
-        self.busy = False
-        # self.customer = None
-        self.customer_being_served = q.Queue()
-        self.is_first_class = False
-        self.customers_added = 0
-        self.customers_served = 0
-        # self.last_customer_served = q.Queue()
-        self.idle_time = 0.00
-
-    def set_service_time(self, passenger_type):
-        """ Sets the service time for a new passenger
-        :param passenger_type:  either "commuter" or "international"
-        """
-        self.service_time = ag.gen_check_in_service_time_per_passenger( passenger_type )
-        self.busy = True
-
-    def update_service_time(self):
-        """ Updates the service time and tells us if the server is busy or not
-        """
-        self.service_time -= 0.01
-
-        if self.service_time <= 0:
-            self.service_time = 0
-            self.busy = False
-            # ------COMMENTED OUT FOR PREVIOUS VERSION-----
-            # self.last_customer_served.put(self.customer)
-
-        if not self.is_busy():
-            self.idle_time += 0.01
-
-    def is_busy(self):
-        """ Call this after updating the service time at each change in system time (delta). Tells us if server is busy.
-        :return: True if server is busy. False if server is NOT busy.
-        """
-        return self.busy
-
-    def add_customer(self, new_passenger):
-        """ Adds a customer to the sever and sets his service time
-        :param new_passenger: the passenger we are adding
-        """
-        #-----PREVIOUS VERSION---
-        # self.customer = new_passenger
-        # self.set_service_time(new_passenger.type_of_flight)
-        # self.customers_added += 1
-
-        # NEW VERSION
-        # get the type of flight his passenger is on
-        type_of_flight = new_passenger.type_of_flight
-        # add the passenger to our service queue
-        self.customer_being_served.put_nowait(new_passenger)
-        # set the service time, depending on what type of flight the customer is on
-        self.set_service_time(type_of_flight)
-        # update the count of customers added
-        self.customers_added += 1
-
-
-    def complete_service(self):
-        """ Models completion of our service
-        :return: the customer who has just finished at this station
-        """
-        #------PREVIOUS VERSION------
-        # completed_customer = None
-        # if not self.last_customer_served.empty():
-        #     completed_customer = self.last_customer_served.get_nowait()
-        #     self.last_customer_served.task_done()
-        # if not completed_customer == None:
-        #     self.customers_served += 1
-        # return completed_customer
-        next_customer = None
-        # only try to pull a customer from the queue if we are NOT busy
-        # AND the queue isn't empty
-        # else we just return a None
-        if not self.is_busy() and not self.customer_being_served.empty():
-            next_customer = self.customer_being_served.get_nowait()
-            self.customer_being_served.task_done()
-            self.customers_served += 1
-        else:
-            next_customer = None
-        return next_customer
-
-
-class SecurityServer:
-    """ Class used to model a server at the Security terminal
-    """
-    def __init__(self):
-        """ Initialize the class variables
-        """
-        #-----PREVIOUS VERSION------
-        #self.service_time = 0.0
-        #self.busy = None
-        #self.customer = None
-        #self.is_first_class = False
-        #self.customers_added = 0
-        #self.customers_served = 0
-        # vvv This can be a list, and we can stop the BS
-        #self.last_customer_served = q.Queue()
-        #self.last_customer_returned = None
-        #self.redundant = None
-
-        self.service_time = 0.0
-        self.busy = None
-        # self.customer = None
-        self.customer_being_served = q.Queue()
-        self.is_first_class = False
-        self.customers_added = 0
-        self.customers_served = 0
-        self.idle_time = 0.0
-
-    def set_service_time(self):
-        """ Sets the service time for a new passenger
-        :param passenger_type:  either "commuter" or "international"
-        """
-        self.service_time = ag.gen_security_screening_time()
-        self.busy = True
-
-    def update_service_time(self):
-        """ Updates the service time and tells us if the server is busy or not
-        """
-        self.service_time -= 0.01
-
-        if self.service_time <= 0:
-            self.service_time = 0
-            self.busy = False
-        #------PREVIOUS VERSION------
-        #    self.last_customer_served.put(self.customer)
-
-        if not self.is_busy():
-            self.idle_time += 0.01
-
-    def is_busy(self):
-        """ Call this after updating the service time at each change in system time (delta). Tells us if server is busy.
-        :return: True if server is busy. False if server is NOT busy.
-        """
-        return self.busy
-
-    def add_customer(self, new_passenger):
-        """ Adds a customer to the sever and sets his service time
-        :param new_passenger: the passenger we are adding
-        """
-        #-----PREVIOUS VERSION-----
-        #self.customer = new_passenger
-        #self.set_service_time()
-        #self.customers_added += 1
-        # NEW VERSION
-        # add the passenger to our service queue
-        self.customer_being_served.put_nowait(new_passenger)
-        # set the service time, depending on what type of flight the customer is on
-        self.set_service_time()
-        # update the count of customers added
-        self.customers_added += 1
-
-    def complete_service(self):
-        """ Models completion of our service
-        :return: the customer who has just finished at this station
-        """
-        # comment this stuff out and try again....
-        # do the tests... make sure they pass...
-        # then do passenger class tests....
-        # then start on the individual tests for the Simulation Class
-        # Run simulation first once though, to see what all breaks...
-
-        #-------PREVIOUS VERSION
-        #matches_redundant = False
-        # redundant = previous completed customer
-        #self.redundant = self.last_customer_returned
-        # then try to get a new one
-        #completed_customer = None
-        #if not self.last_customer_served.empty():
-        #    completed_customer = self.last_customer_served.get_nowait()
-        #    self.last_customer_served.task_done()
-        #    if not self.redundant is None and not completed_customer is None:
-        #        matches_redundant = str(completed_customer.system_time_entered) == str(self.redundant.system_time_entered)
-        #if not completed_customer is None and not matches_redundant:
-        #    self.customers_served += 1
-        #if matches_redundant:
-        #    return None
-        #self.last_customer_returned = completed_customer
-        #return completed_customer
-        next_customer = None
-        # only try to pull a customer from the queue if we are NOT busy
-        # AND the queue isn't empty
-        # else we just return a None
-        if not self.is_busy() and not self.customer_being_served.empty():
-            next_customer = self.customer_being_served.get_nowait()
-            self.customer_being_served.task_done()
-            self.customers_served += 1
-        else:
-            next_customer = None
-        return next_customer
 
 
 ###########################
@@ -572,50 +312,6 @@ class BaristaServer:
 
 
 
-##############################
-##### AIRPORT PASSENGERS #####
-##############################
-class Passenger:
-    """ Class used to model a passenger in our simluation
-    """
-    def __init__(self, system_time, flight_type, ticket_class, system_iteration, relative_time):
-        self.system_time_entered = system_time
-        self.type_of_flight = flight_type
-        self.flight_class = ticket_class
-        self.gets_refund = False
-        self.international_flight_number = system_iteration
-        self.relative_time = relative_time
-        #--------DEBUGGING-------
-        #if flight_type == "international" and system_time > 1490:
-        #    print "here"
-        #
-        #confirm_system_time = (system_time / system_iteration)
-        #confirm_relative_time = str(relative_time)
-        #relative_system_time = system_time / (system_iteration * 360.0)
-        #if not str(math.floor((system_time / system_iteration))) == str(math.floor(relative_time)):
-        #    print "something's off."
-        #------------------------
-        # International passengers who arrived more than 90 mins before their flight get a refund if they miss
-        if flight_type == "international" and (360.0 - relative_time ) > 90.0:
-            self.gets_refund = True
-
-    def __eq__(self, other):
-        """Override the default Equals behavior"""
-        if isinstance(other, self.__class__):
-            return self.__dict__ == other.__dict__
-        return NotImplemented
-
-    def __ne__(self, other):
-        """Define a non-equality test"""
-        if isinstance(other, self.__class__):
-            return not self.__eq__(other)
-        return NotImplemented
-
-    def __hash__(self):
-        """Override the default hash behavior (that returns the id or the object)"""
-        return hash(tuple(sorted(self.__dict__.items())))
-
-
 #############################
 ######  C&C CUSTOMERS  ######
 #############################
@@ -669,7 +365,7 @@ class Simulation:
         # Time variables
         self.system_time = 0.00
         self.delta = 0.01
-        self.international_flight_number = 0   # = number of system iterations
+        self.hours_passed = 0   # = number of system iterations
         self.system_iteration = 0
         self.relative_global_time = 0.00
 
@@ -697,87 +393,33 @@ class Simulation:
 
         #-----ARRIVALS-----
         # Arrival list
-        self.international_first_class_ARRIVALS = []
-        self.international_coach_class_ARRIVALS = []
-        self.commuter_coach_class_ARRIVALS = []
+        self.barista_ARRIVALS = []
+        self.cashier_ARRIVALS = []
         # All arrivals
-        self.arrivals = [self.international_first_class_ARRIVALS,
-                         self.international_coach_class_ARRIVALS,
-                         self.commuter_coach_class_ARRIVALS]
+        self.arrivals = [self.barista_ARRIVALS,
+                         self.cashier_ARRIVALS]
 
         #----QUEUES-----
         # Check-in Queues - separate for first and coach
-        self.first_class_check_in_QUEUE = CheckInQueue()
-        self.coach_class_check_in_QUEUE = CheckInQueue()
+        self.register_QUEUE = RegisterQueue()
         # Security Queues - also separate for first and coach
-        self.first_class_security_QUEUE = SecurityQueue()
-        self.coach_class_security_QUEUE = SecurityQueue()
+        self.barista_QUEUE = BaristaQueue()
+
         # All Queues
-        self.queues = [self.first_class_check_in_QUEUE,
-                       self.coach_class_check_in_QUEUE,
-                       self.first_class_security_QUEUE,
-                       self.coach_class_security_QUEUE]
+        self.queues = [self.register_QUEUE,
+                       self.barista_QUEUE]
 
         #------SERVERS-------
-        # Check-in Servers
-        self.first_class_CHECK_IN_server01 = CheckInServer()
-        self.first_class_CHECK_IN_server01.is_first_class = True
-        self.coach_class_CHECK_IN_server01 = CheckInServer()
-        self.coach_class_CHECK_IN_server02 = CheckInServer()
-        self.coach_class_CHECK_IN_server03 = CheckInServer()
-        self.coach_class_CHECK_IN_server04 = CheckInServer()
-        self.coach_class_CHECK_IN_server05 = CheckInServer()
-        self.coach_class_CHECK_IN_server06 = CheckInServer()
-        self.coach_class_CHECK_IN_server07 = CheckInServer()
-        self.coach_class_CHECK_IN_server08 = CheckInServer()
-        self.check_in_servers = [self.first_class_CHECK_IN_server01,
-                                 self.coach_class_CHECK_IN_server01,
-                                 self.coach_class_CHECK_IN_server02,
-                                 self.coach_class_CHECK_IN_server03,
-                                 self.coach_class_CHECK_IN_server04,
-                                 self.coach_class_CHECK_IN_server05,
-                                 self.coach_class_CHECK_IN_server06,
-                                 self.coach_class_CHECK_IN_server07,
-                                 self.coach_class_CHECK_IN_server08]
-        # Security Servers
-        self.first_class_SECURITY_server01 = SecurityServer()
-        self.first_class_SECURITY_server01.is_first_class = True
-        self.coach_class_SECURITY_server01 = SecurityServer()
-        self.coach_class_SECURITY_server02 = SecurityServer()
-        self.coach_class_SECURITY_server03 = SecurityServer()
-        self.coach_class_SECURITY_server04 = SecurityServer()
-        self.coach_class_SECURITY_server05 = SecurityServer()
-        self.coach_class_SECURITY_server06 = SecurityServer()
-        self.coach_class_SECURITY_server07 = SecurityServer()
-        self.coach_class_SECURITY_server08 = SecurityServer()
-        self.security_servers = [self.first_class_SECURITY_server01,
-                                 self.coach_class_SECURITY_server01,
-                                 self.coach_class_SECURITY_server02,
-                                 self.coach_class_SECURITY_server03,
-                                 self.coach_class_SECURITY_server04,
-                                 self.coach_class_SECURITY_server05,
-                                 self.coach_class_SECURITY_server06,
-                                 self.coach_class_SECURITY_server07,
-                                 self.coach_class_SECURITY_server08]
+        # Register Servers
+        self.CASHIER_server01 = CashierServer()
+        self.check_in_servers = [self.CASHIER_server01]
+
+        # Barista Servers
+        self.BARISTA_server01 = BaristaServer()
+        self.security_servers = [self.BARISTA_server01]
         # All servers
-        self.servers = [self.first_class_CHECK_IN_server01,
-                        self.coach_class_CHECK_IN_server01,
-                        self.coach_class_CHECK_IN_server02,
-                        self.coach_class_CHECK_IN_server03,
-                        self.coach_class_CHECK_IN_server04,
-                        self.coach_class_CHECK_IN_server05,
-                        self.coach_class_CHECK_IN_server06,
-                        self.coach_class_CHECK_IN_server07,
-                        self.coach_class_CHECK_IN_server08,
-                        self.first_class_SECURITY_server01,
-                        self.coach_class_SECURITY_server01,
-                        self.coach_class_SECURITY_server02,
-                        self.coach_class_SECURITY_server03,
-                        self.coach_class_SECURITY_server04,
-                        self.coach_class_SECURITY_server05,
-                        self.coach_class_SECURITY_server06,
-                        self.coach_class_SECURITY_server07,
-                        self.coach_class_SECURITY_server08]
+        self.servers = [self.CASHIER_server01,
+                        self.BARISTA_server01]
 
         #-----GATE-----
         self.commuter_passengers_at_gate = 0
@@ -795,14 +437,11 @@ class Simulation:
 
 
         #----INTERNAL_DATA COLLECTION-----
-        self.total_commuter_passengers_arrived = 0
-        self.total_commuter_passengers_departed = 0
-        self.total_intl_coach_passengers_arrived = 0
-        self.total_intl_coach_passengers_departed = 0
-        self.total_intl_first_class_passengers_arrived = 0
-        self.total_intl_first_class_passengers_departed = 0
-        self.intl_passengers_departed_combined = 0
-        self.data_num_international_that_passengers_missed_flight = 0
+        self.total_cashier_customers_arrived = 0
+        self.total_cashier_customers_departed = 0
+        self.total_barista_customers_arrived = 0
+        self.total_barista_customers_departed = 0
+        self.customers_combined = 0
         # Then counters to see how far people are making it in the system....
         # Averaged data
         self.time_in_system = []
@@ -828,53 +467,24 @@ class Simulation:
 
 
 
-    def generate_SIX_HOURS_of_arrivals(self):
+    def generate_ONE_HOUR_of_arrivals(self):
         """ Generates six hours of arrivals and stores in our ARRIVAL LIST instance variables.
         """
         # Create instance of arrival class
-        new_arrivals = Arrivals()
+        new_arrivals = CupChaucArrivals()
         # Generate new arrivals
         new_arrivals.get_arrivals()
         # Add one to the system iteration (denoted by international flight number)
-        self.international_flight_number += 1
+        self.hours_passed += 1
 
         # Transfer those values into our simulation, as arrivals for next six hours
-        self.international_first_class_ARRIVALS = new_arrivals.intl_first_class_arrivals
-        self.international_coach_class_ARRIVALS = new_arrivals.intl_coach_arrivals
-        self.commuter_coach_class_ARRIVALS = new_arrivals.commuter_coach_arrivals
+        self.barista_ARRIVALS = new_arrivals.barista_arrivals
+        self.cashier_ARRIVALS = new_arrivals.cashier_arrivals
 
         # Count our arrivals for data collection
-        self.total_commuter_passengers_arrived += len(new_arrivals.commuter_coach_arrivals)
-        self.total_intl_coach_passengers_arrived += len(new_arrivals.intl_coach_arrivals)
-        self.total_intl_first_class_passengers_arrived += len(new_arrivals.intl_first_class_arrivals)
-
-        # can count how many arrivals SHOULD get refunds here, and then compare to how many actually ARE getting tagged
-        coach_refunds = sum(i < 270 for i in self.international_coach_class_ARRIVALS)
-        first_class_refunds = sum(i < 270 for i in self.international_first_class_ARRIVALS)
-        self.refund_confirmation_number += coach_refunds
-        self.refund_confirmation_number += first_class_refunds
+        self.total_cashier_customers_arrived += len(new_arrivals.cashier_arrivals)
+        self.total_barista_customers_arrived += len(new_arrivals.barista_arrivals)
         print "arrivals generated"
-
-    def collect_revenue(self):
-        """ Collects revenue from last set of arrivals
-        """
-        # Collect revenue for all international first class tickets
-        for p in self.international_first_class_ARRIVALS:
-            self.first_class_intl_revenue += self.intl_first_class_ticket_price
-        # Add first class international ticket revenue to total
-        self.revenue_total += self.first_class_intl_revenue
-
-        # Collect revenue for all international coach class tickets
-        for p in self.international_coach_class_ARRIVALS:
-            self.coach_class_intl_revenue += self.intl_coach_ticket_price
-        # Add coach class international ticket revenue to total
-        self.revenue_total += self.coach_class_intl_revenue
-
-        # Collect revenue for all commuter coach class tickets
-        for p in self.commuter_coach_class_ARRIVALS:
-            self.commuter_revenue += self.commuter_ticket_price
-        # Add commuter revenue tot total
-        self.revenue_total += self.commuter_revenue
 
     def update_servers(self):
         """ Updates servers after a change of DELTA in system time
@@ -887,50 +497,34 @@ class Simulation:
             creates a passenger object for use in the system, and places it in the check-in queue
         """
         current_time = self.system_time
-        current_flight = self.international_flight_number
+        current_flight = self.hours_passed
         relative_time = self.relative_global_time
 
 
         # make sure we're not checking an array that's empty
-        if not len(self.international_first_class_ARRIVALS) == 0:
+        if not len(self.barista_ARRIVALS) == 0:
             # Then get next available item from INTL FIRST CLASS ARRIVALS
-            if self.international_first_class_ARRIVALS[0] <= relative_time:
+            if self.barista_ARRIVALS[0] <= relative_time:
                 # create passenger, put it in first class check in queue
-                new_passenger = Passenger(self.system_time, "international", "first_class", self.international_flight_number,
-                                          self.international_first_class_ARRIVALS[0])
-                self.first_class_check_in_QUEUE.add_passenger(new_passenger)
+                new_customer = Customer(self.system_time, "barista", "barista", self.hours_passed,
+                                          self.barista_ARRIVALS[0])
+                self.register_QUEUE.add_customer(new_customer)
                 # pop from the list
-                self.international_first_class_ARRIVALS.pop(0)
-                # collect refund data
-                if new_passenger.gets_refund:
-                    self.number_of_passengers_who_would_get_refund += 1
+                self.barista_ARRIVALS.pop(0)
+
 
         # make sure we're not checking an array that's empty
-        if not len(self.international_coach_class_ARRIVALS) == 0:
-            # Then get next available item from INTL COACH CLASS ARRIVALS
-            if self.international_coach_class_ARRIVALS[0] <= relative_time:
-                # create passenger, put it it in coach class check in queue
-                new_passenger = Passenger(self.system_time, "international", "coach", self.international_flight_number,
-                                          self.international_coach_class_ARRIVALS[0])
-                self.coach_class_check_in_QUEUE.add_passenger(new_passenger)
-                # pop from the list
-                self.international_coach_class_ARRIVALS.pop(0)
-                # collect refund data
-                if new_passenger.gets_refund:
-                    self.number_of_passengers_who_would_get_refund += 1
-
-        # make sure we're not checking an array that's empty
-        if not len(self.commuter_coach_class_ARRIVALS) == 0:
+        if not len(self.cashier_ARRIVALS) == 0:
             # Then get next available item from COMMUTER COACH CLASS ARRIVALS
-            if self.commuter_coach_class_ARRIVALS[0] <= relative_time:
+            if self.cashier_ARRIVALS[0] <= relative_time:
                 # create passenger, put it in coach class check in queue
-                new_passenger = Passenger(self.system_time, "commuter", "coach", self.international_flight_number,
-                                          self.commuter_coach_class_ARRIVALS[0])
-                self.coach_class_check_in_QUEUE.add_passenger(new_passenger)
+                new_customer = Customer(self.system_time, "cashier", "cashier", self.hours_passed,
+                                          self.cashier_ARRIVALS[0])
+                self.register_QUEUE.add_customer(new_customer)
                 # pop from the list
-                self.commuter_coach_class_ARRIVALS.pop(0)
+                self.cashier_ARRIVALS.pop(0)
 
-    def move_to_CHECK_IN_server(self):
+    def move_to_CASHIER_server(self):
         """ Look at check in servers, and if they are not busy, advance the first item in the correct queue
             to the correct (and open) check in server
         """
@@ -938,99 +532,27 @@ class Simulation:
         #       This code can be very much condensed
 
         # If first class check-in server is NOT busy
-        if not self.first_class_CHECK_IN_server01.is_busy():
+        if not self.CASHIER_server01.is_busy():
             # de-queue from the FIRST class check-in queue
-            if not self.first_class_check_in_QUEUE.queue.empty():
-                next_passenger = self.first_class_check_in_QUEUE.queue.get()
-                self.first_class_check_in_QUEUE.queue.task_done()
+            if not self.register_QUEUE.queue.empty():
+                next_passenger = self.register_QUEUE.queue.get()
+                self.register_QUEUE.queue.task_done()
                 # and move next passenger to server, since it isn't busy
-                self.first_class_CHECK_IN_server01.add_customer(next_passenger)
-
-        # If coach check in server 01 is NOT busy
-        if not self.coach_class_CHECK_IN_server01.is_busy():
-            # de-queue from the COACH class check-in queue
-            if not self.coach_class_check_in_QUEUE.queue.empty():
-                next_passenger = self.coach_class_check_in_QUEUE.queue.get()
-                self.coach_class_check_in_QUEUE.queue.task_done()
-                # and move next passenger to server, since it isn't busy
-                self.coach_class_CHECK_IN_server01.add_customer(next_passenger)
-
-        # If coach check in server 02 is NOT busy
-        if not self.coach_class_CHECK_IN_server02.is_busy():
-            # de-queue from the COACH class check-in queue
-            if not self.coach_class_check_in_QUEUE.queue.empty():
-                next_passenger = self.coach_class_check_in_QUEUE.queue.get()
-                self.coach_class_check_in_QUEUE.queue.task_done()
-                # and move next passenger to server, since it isn't busy
-                self.coach_class_CHECK_IN_server02.add_customer(next_passenger)
-
-        # If coach check in server 03 is NOT busy
-        if not self.coach_class_CHECK_IN_server03.is_busy():
-            # de-queue from the COACH class check-in queue
-            if not self.coach_class_check_in_QUEUE.queue.empty():
-                next_passenger = self.coach_class_check_in_QUEUE.queue.get()
-                self.coach_class_check_in_QUEUE.queue.task_done()
-                # and move next passenger to server, since it isn't busy
-                self.coach_class_CHECK_IN_server03.add_customer(next_passenger)
-
-        # If coach check in server 04 is NOT busy
-        if not self.coach_class_CHECK_IN_server04.is_busy():
-            # de-queue from the COACH class check-in queue
-            if not self.coach_class_check_in_QUEUE.queue.empty():
-                next_passenger = self.coach_class_check_in_QUEUE.queue.get()
-                self.coach_class_check_in_QUEUE.queue.task_done()
-                # and move next passenger to server, since it isn't busy
-                self.coach_class_CHECK_IN_server04.add_customer(next_passenger)
-
-        # If coach check in server 05 is NOT busy
-        if not self.coach_class_CHECK_IN_server05.is_busy():
-            # de-queue from the COACH class check-in queue
-            if not self.coach_class_check_in_QUEUE.queue.empty():
-                next_passenger = self.coach_class_check_in_QUEUE.queue.get()
-                self.coach_class_check_in_QUEUE.queue.task_done()
-                # and move next passenger to server, since it isn't busy
-                self.coach_class_CHECK_IN_server05.add_customer(next_passenger)
-
-        # If coach check in server 06 is NOT busy
-        if not self.coach_class_CHECK_IN_server06.is_busy():
-            # de-queue from the COACH class check-in queue
-            if not self.coach_class_check_in_QUEUE.queue.empty():
-                next_passenger = self.coach_class_check_in_QUEUE.queue.get()
-                self.coach_class_check_in_QUEUE.queue.task_done()
-                # and move next passenger to server, since it isn't busy
-                self.coach_class_CHECK_IN_server06.add_customer(next_passenger)
-
-        # If coach check in server 07 is NOT busy
-        if not self.coach_class_CHECK_IN_server07.is_busy():
-            # de-queue from the COACH class check-in queue
-            if not self.coach_class_check_in_QUEUE.queue.empty():
-                next_passenger = self.coach_class_check_in_QUEUE.queue.get()
-                self.coach_class_check_in_QUEUE.queue.task_done()
-                # and move next passenger to server, since it isn't busy
-                self.coach_class_CHECK_IN_server07.add_customer(next_passenger)
-
-        # If coach check in server 08 is NOT busy
-        if not self.coach_class_CHECK_IN_server08.is_busy():
-            # de-queue from the COACH class check-in queue
-            if not self.coach_class_check_in_QUEUE.queue.empty():
-                next_passenger = self.coach_class_check_in_QUEUE.queue.get()
-                self.coach_class_check_in_QUEUE.queue.task_done()
-                # and move next passenger to server, since it isn't busy
-                self.coach_class_CHECK_IN_server08.add_customer(next_passenger)
+                self.CASHIER_server01.add_customer(next_passenger)
 
 
 
-    def update_check_in_queues(self):
+    def update_register_queues(self):
         """ Updates queues after a change of DELTA in system time
         """
         # then check the servers, and if they're free move from queue to server
-        self.move_to_CHECK_IN_server()
+        self.move_to_CASHIER_server()
         # Check all arrivals and if the arrival time matches system time...
         # Create a passenger and ADD the correct queue
         self.collect_and_create_passengers_from_arrivals()
 
 
-    def update_security_queues(self):
+    def update_barista_queues(self):
         """ Updates queues after a change of DELTA in system time
         """
         # Check all check-in servers...  and if they are NOT busy, take their passenger...
@@ -1042,17 +564,17 @@ class Simulation:
             # if not server.is_busy():
             #if not server.last_customer_served.empty():
                 # Take the passenger, who must have just finished being served
-                my_passenger = server.complete_service()
+                my_customer = server.complete_service()
                 # and move them to the correct security queue
-                if not my_passenger == None:
+                if not my_customer == None:
                     # but first make sure that the passenger does not == None
-                    if my_passenger.flight_class == "coach":
-                        # add to coach security queue
-                        self.coach_class_security_QUEUE.add_passenger(my_passenger)
-                        # else, add to first class security queue
+                    if my_customer.customer_class == "cashier":
+                        # add to end of simulation
+                        self.move_to_GATE()
+                        # else, add to barista queue
                     else:
                         # because if they are NOT coach, they must be first class
-                        self.first_class_security_QUEUE.add_passenger(my_passenger)
+                        self.barista_QUEUE.add_customer(my_customer)
 
 
     def move_to_SECURITY_server(self):
@@ -1067,10 +589,10 @@ class Simulation:
                 # if server is first class, take a passenger from the first class security queue
                 if server.is_first_class == True:
                     # first make sure it's not empty
-                    if not self.first_class_security_QUEUE.queue.empty():
+                    if not self.barista_QUEUE.queue.empty():
                         # and if it's not, grab the next passenger out of it
-                        next_passenger = self.first_class_security_QUEUE.queue.get()
-                        self.first_class_security_QUEUE.queue.task_done()
+                        next_passenger = self.barista_QUEUE.queue.get()
+                        self.barista_QUEUE.queue.task_done()
                         # And move that passenger into the available security server
                         server.add_customer(next_passenger)
                 # else, take the passenger from the commuter class security queue
@@ -1124,7 +646,7 @@ class Simulation:
         """ Checks if an international passenger that has completed this gauntlet is on time!
         """
         # first, check if they made their flight --> is TRUE if the system iteration equals current flight number
-        if passenger_to_check.international_flight_number == self.international_flight_number:
+        if passenger_to_check.international_flight_number == self.hours_passed:
             self.international_passengers_at_gate += 1
             self.data_users_moved_to_INTL_GATE += 1
         # ----BELOW HERE, MISSED FLIGHT-------
@@ -1149,7 +671,7 @@ class Simulation:
             self.time_in_system.append(time_in_system)
             self.time_in_system_coach.append(time_in_system)
         else:
-            self.total_intl_first_class_passengers_departed += 1
+            self.total_barista_customers_departed += 1
             # data collection
             time_in_system = self.system_time - passenger_to_check.system_time_entered
             self.time_in_system.append(time_in_system)
@@ -1198,7 +720,7 @@ class Simulation:
                     self.commuter_passengers_at_gate_list.pop(0)
             if counter > 0:
                 group_average = passenger_wait_time_for_group/counter
-                self.total_commuter_passengers_departed += counter
+                self.total_cashier_customers_departed += counter
                 self.avg_wait_time_at_commuter_gate += group_average
 
 
@@ -1208,7 +730,7 @@ class Simulation:
         # If system_time/360.0 is an integer --> then an international plane is departing
         if self.time_until_international_flight <= 0.0:
             # update our data set, to be sure all is working
-            self.intl_passengers_departed_combined += self.international_passengers_at_gate
+            self.customers_combined += self.international_passengers_at_gate
 
             # and we take everyone at the international gate
             self.international_passengers_at_gate = 0
@@ -1293,25 +815,25 @@ class Simulation:
 
         """
         # skip these on the first iteration because we don't have data yet
-        if not self.international_flight_number == 0:
+        if not self.hours_passed == 0:
 
             #DO IT IN REVERSE ORDER
             # start by updating the servers
             self.update_servers()
             # then, if we can pull someone FROM a sever, while not busy, do it
             self.move_to_GATE()
-            self.update_security_queues()
+            self.update_barista_queues()
             # then get passengers from arrivals, and fill the queues
             self.collect_and_create_passengers_from_arrivals()
             # then move people into any empty spots in the servers
             self.move_to_SECURITY_server()
-            self.move_to_CHECK_IN_server()
+            self.move_to_CASHIER_server()
 
         # every six hours, generate new arrivals,
         # and perform accounting procedures on ticket
         # for those arrivals
         if self.time_until_international_flight <= 0:
-            self.generate_SIX_HOURS_of_arrivals()
+            self.generate_ONE_HOUR_of_arrivals()
             self.collect_revenue()
             self.every_six_hours_deduct_operating_costs()
 
@@ -1358,13 +880,13 @@ class Simulation:
         print "Confirmation number of passengers who get refund="+str(self.refund_confirmation_number)
         print "#-----System Info-----"
         print "Note: --> 'ARRIVED' means 'entered system' ;;; 'DEPARTED' means 'left system', whether a flight was made OR missed."
-        print "Total COMMUTER passengers ARRIVED="+str(self.total_commuter_passengers_arrived)
-        print "Total COMMUTER passengers DEPARTED="+str(self.total_commuter_passengers_departed)
-        print "Total INTERNATIONAL first class passengers ARRIVED="+str(self.total_intl_first_class_passengers_arrived)
-        print "Total INTERNATIONAL first class passengers DEPARTED="+str(self.total_intl_first_class_passengers_departed)
+        print "Total COMMUTER passengers ARRIVED="+str(self.total_cashier_customers_arrived)
+        print "Total COMMUTER passengers DEPARTED="+str(self.total_cashier_customers_departed)
+        print "Total INTERNATIONAL first class passengers ARRIVED="+str(self.total_barista_customers_arrived)
+        print "Total INTERNATIONAL first class passengers DEPARTED="+str(self.total_barista_customers_departed)
         print "Total INTERNATIONAL coach class passengers ARRIVED="+str(self.total_intl_coach_passengers_arrived)
         print "Total INTERNATIONAL coach class passengers DEPARTED="+str(self.total_intl_coach_passengers_departed)
-        total_intl_departs = self.total_intl_first_class_passengers_departed + self.total_intl_coach_passengers_departed
+        total_intl_departs = self.total_barista_customers_departed + self.total_intl_coach_passengers_departed
         print "Total INTERNATIONAL passengers (all types) DEPARTED="+str(total_intl_departs)
         print "-------Averages-------"
         sum_time_in_system = sum(self.time_in_system)
@@ -1386,10 +908,10 @@ class Simulation:
         print "------Internal Mechanisms-------"
         print ".......Stage 1......"
         print "Users added to COACH CheckInQueues="+str(self.coach_class_check_in_QUEUE.customers_added)
-        print "Users added to FIRSTCLASS CheckInQueue="+str(self.first_class_check_in_QUEUE.customers_added)
+        print "Users added to FIRSTCLASS CheckInQueue="+str(self.register_QUEUE.customers_added)
         print "......Stage 2......."
         print "Users added to COACH SecurityQueue="+str(self.coach_class_security_QUEUE.customers_added)
-        print "Users added to FIRSTCLASS SecurityQueue="+str(self.first_class_security_QUEUE.customers_added)
+        print "Users added to FIRSTCLASS SecurityQueue="+str(self.barista_QUEUE.customers_added)
         print "......Stage 3......."
         print "Users moved to INTL_GATE="+str(self.data_users_moved_to_INTL_GATE)
         print "Users moved to COMMUTER GATE="+str(self.data_users_moved_to_COMMUTER_GATE)

@@ -22,7 +22,7 @@ and increase customer throughput.
 def main():
 
     # TEST OUR PROGRAM'S PIECES
-    hourly_arrivals = cc.generate_hourly_arrivals()
+    """hourly_arrivals = cc.generate_hourly_arrivals()
     arrivals_by_type = cc.gen_customer_type_distribution(hourly_arrivals)
 
     for arrival in arrivals_by_type:
@@ -40,12 +40,11 @@ def main():
     print "------------------"
     for arrival in barista_arrivals:
         print arrival
-
+"""
 
 
     ################## UNCOMMENT TO RUN FULL SIM ################
 
-    """
     print "UNIVERISTY OF PITTSBURGH - SPRING 2016:: CS1538, Assignment #6"
     print "--------------------------------------------------------------"
     print ""
@@ -61,7 +60,7 @@ def main():
     mySim = tam.Simulation()
     mySim.run_simulation(simulation_time)
     mySim.print_simulation_results()
-"""
+
     ######################################################################
     return
 

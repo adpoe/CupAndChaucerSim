@@ -217,7 +217,7 @@ def confirm_confirm_check_service_times_correct():
 def confirm_arrival_generation_is_correct():
     # iterate through each array and print the values
     mySimulation = tam.Simulation()
-    mySimulation.generate_SIX_HOURS_of_arrivals()
+    mySimulation.generate_ONE_HOUR_of_arrivals()
 
     # Print international first class arrivals
     count_first_class_intl_arrivals = 0
@@ -248,7 +248,7 @@ def confirm_arrival_generation_is_correct():
 def confirm_revenue_collection_is_correct():
     # test the revenue collection
     mySimulation = tam.Simulation()
-    mySimulation.generate_SIX_HOURS_of_arrivals()
+    mySimulation.generate_ONE_HOUR_of_arrivals()
 
     # get number of arrivals for each item
     num_commuter_arrivals = len(mySimulation.commuter_coach_class_ARRIVALS)
