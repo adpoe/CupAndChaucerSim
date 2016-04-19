@@ -25,7 +25,7 @@ def generate_hourly_arrivals():
         while counter <= arrivals_this_minute:
 
             current_time_in_minutes += 1.0/arrivals_this_minute_as_a_float
-            print current_time_in_minutes
+            # print current_time_in_minutes
             # print current_minute
             final_data_set_of_timed_arrivals.append(current_time_in_minutes)
             counter += 1

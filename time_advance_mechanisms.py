@@ -18,7 +18,7 @@ For each passenger, also need to generate their wait times for each queue. Or is
 
 
 """
-Goals 
+Goals
 ------
 
 Generalize this code so it can be used for ANY queuing system.
