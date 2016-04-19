@@ -120,14 +120,11 @@ class CashierServer:
     def __init__(self):
         """ Initialize the class variables
         """
-        #----COMMENTED OUT ARE FOR PREVIOUS VERSION-----
         self.service_time = 0.0
         self.busy = False
-        # self.customer = None
         self.customer_being_served = q.Queue()
         self.customers_added = 0
         self.customers_served = 0
-        # self.last_customer_served = q.Queue()
         self.idle_time = 0.00
 
     def set_service_time(self):
@@ -145,8 +142,6 @@ class CashierServer:
         if self.service_time <= 0:
             self.service_time = 0
             self.busy = False
-            # ------COMMENTED OUT FOR PREVIOUS VERSION-----
-            # self.last_customer_served.put(self.customer)
 
         if not self.is_busy():
             self.idle_time += 0.01
@@ -161,12 +156,6 @@ class CashierServer:
         """ Adds a customer to the sever and sets his service time
         :param new_passenger: the passenger we are adding
         """
-        #-----PREVIOUS VERSION---
-        # self.customer = new_passenger
-        # self.set_service_time(new_passenger.type_of_flight)
-        # self.customers_added += 1
-
-        # NEW VERSION
         # get the type of flight his passenger is on
         # add the passenger to our service queue
         self.customer_being_served.put_nowait(new_passenger)
@@ -180,18 +169,6 @@ class CashierServer:
         """ Models completion of our service
         :return: the customer who has just finished at this station
         """
-        #------PREVIOUS VERSION------
-        # completed_customer = None
-        # if not self.last_customer_served.empty():
-        #     completed_customer = self.last_customer_served.get_nowait()
-        #     self.last_customer_served.task_done()
-        # if not completed_customer == None:
-        #     self.customers_served += 1
-        # return completed_customer
-        next_customer = None
-        # only try to pull a customer from the queue if we are NOT busy
-        # AND the queue isn't empty
-        # else we just return a None
         if not self.is_busy() and not self.customer_being_served.empty():
             next_customer = self.customer_being_served.get_nowait()
             self.customer_being_served.task_done()
@@ -207,18 +184,6 @@ class BaristaServer:
     def __init__(self):
         """ Initialize the class variables
         """
-        #-----PREVIOUS VERSION------
-        #self.service_time = 0.0
-        #self.busy = None
-        #self.customer = None
-        #self.is_first_class = False
-        #self.customers_added = 0
-        #self.customers_served = 0
-        # vvv This can be a list, and we can stop the BS
-        #self.last_customer_served = q.Queue()
-        #self.last_customer_returned = None
-        #self.redundant = None
-
         self.service_time = 0.0
         self.busy = None
         # self.customer = None
@@ -243,8 +208,6 @@ class BaristaServer:
         if self.service_time <= 0:
             self.service_time = 0
             self.busy = False
-        #------PREVIOUS VERSION------
-        #    self.last_customer_served.put(self.customer)
 
         if not self.is_busy():
             self.idle_time += 0.01
@@ -259,11 +222,6 @@ class BaristaServer:
         """ Adds a customer to the sever and sets his service time
         :param new_passenger: the passenger we are adding
         """
-        #-----PREVIOUS VERSION-----
-        #self.customer = new_passenger
-        #self.set_service_time()
-        #self.customers_added += 1
-        # NEW VERSION
         # add the passenger to our service queue
         self.customer_being_served.put_nowait(new_customer)
         # set the service time, depending on what type of flight the customer is on
@@ -275,29 +233,6 @@ class BaristaServer:
         """ Models completion of our service
         :return: the customer who has just finished at this station
         """
-        # comment this stuff out and try again....
-        # do the tests... make sure they pass...
-        # then do passenger class tests....
-        # then start on the individual tests for the Simulation Class
-        # Run simulation first once though, to see what all breaks...
-
-        #-------PREVIOUS VERSION
-        #matches_redundant = False
-        # redundant = previous completed customer
-        #self.redundant = self.last_customer_returned
-        # then try to get a new one
-        #completed_customer = None
-        #if not self.last_customer_served.empty():
-        #    completed_customer = self.last_customer_served.get_nowait()
-        #    self.last_customer_served.task_done()
-        #    if not self.redundant is None and not completed_customer is None:
-        #        matches_redundant = str(completed_customer.system_time_entered) == str(self.redundant.system_time_entered)
-        #if not completed_customer is None and not matches_redundant:
-        #    self.customers_served += 1
-        #if matches_redundant:
-        #    return None
-        #self.last_customer_returned = completed_customer
-        #return completed_customer
         next_customer = None
         # only try to pull a customer from the queue if we are NOT busy
         # AND the queue isn't empty
@@ -369,28 +304,6 @@ class Simulation:
         self.system_iteration = 0
         self.relative_global_time = 0.00
         self.time_until_next_arrival_generation = 60.0
-
-        #---MONEY---
-        # Money variables
-        # Revenue
-        self.revenue_total = 0.0
-        self.commuter_revenue = 0.0
-        self.first_class_intl_revenue = 0.0
-        self.coach_class_intl_revenue = 0.0
-        # Losses
-        self.refunds_issued = 0
-        self.money_lost_to_refunds = 0.0
-        self.wages_paid = 0.0
-        self.cost_per_server = params.HOURLY_WAGE_OF_CHECKIN_AGENT
-        self.cost_of_international_flight = params.OPERATING_COST_FOR_INTL_FLIGHT
-        self.cost_of_commuter_flight = params.OPERATING_COST_FOR_DOMESTIC_FLIGHT
-        # Constants
-        self.commuter_ticket_price = params.COMMUTER_COACH_TICKET_COST
-        self.intl_coach_ticket_price = params.INTL_COACH_TICKET_COST
-        self.intl_first_class_ticket_price = params.INTL_FIRST_CLASS_TICKET_COST
-        self.number_of_passengers_who_would_get_refund = 0
-        self.refund_confirmation_number = 0
-
 
         #-----ARRIVALS-----
         # Arrival list
@@ -467,11 +380,11 @@ class Simulation:
 
         # clean up arrivals, so nothing greater 60, because we'll never reach it
         for arrival in new_arrivals.cashier_arrivals:
-            if arrival > 60.0:
+            if arrival > 59.99999999:
                 new_arrivals.cashier_arrivals.remove(arrival)
 
         for arrival in new_arrivals.barista_arrivals:
-            if arrival > 60.0:
+            if arrival > 59.99999999:
                 new_arrivals.barista_arrivals.remove(arrival)
 
 
@@ -747,24 +660,4 @@ class Simulation:
         server_count = len(self.servers)
         print "AGENTS AVG IDLE TIME="+str(self.total_server_idle_time/server_count)
 
-    def goal_reporting(self):
-        # maximize profit
-        # minimize check-in wait time (esp for first class)
-        #   --> need to start collecting check-in wait times
-        # Maximize likelihood that international passengers catches plane
-        #   --> already have this
-        # Minimize post-security screening wait time for commuter passengers
-        #   --> need to start storing the passengers, or at least their times in a list
-        #       then removing top 50 items from that list, and when we do it, iterate through
-        #       the list and calculate (entered_time - current_system_time)
-        #       then take the average and print it
-        # Minimize agents' idle time
-        #   --> need to put a counter for idle time in at each server, if incremented and
-        #       their queue is empty... or just False... not busy, then increment idle time
-        return
 
-    def actions(self):
-        # reallocate check-in agents
-        # increase number of check-in agents (can be up to 6)
-        # change number of commuter flights per day
-        return
