@@ -13,7 +13,7 @@ def generate_hourly_arrivals():
     current_minute = 0
 
     # get an array of arrivals by minute
-    num_arrivals_per_minute = np.random.poisson(1.692,60)
+    num_arrivals_per_minute = np.random.poisson(1.60833333,60)
 
     # get specific times in each minute at which the people arrive
     for arrivals_this_minute in num_arrivals_per_minute:
@@ -85,7 +85,7 @@ def create_array_of_barista_arrivals(tuple_of_arrivals):
 ##### CUP AND CHAUCER SERVICE TIME #######
 ##########################################
 def gen_cashier_service_time():
-    return np.random.exponential(1.0/0.071) * .01
+    return np.random.exponential(1.0/0.07070707) * .01
 
 def gen_barista_service_time():
-    return np.random.exponential(1.0/0.025) * .01
+    return np.random.exponential(1.0/0.0248083) * .01

@@ -558,6 +558,7 @@ class Simulation:
                         self.time_in_system_CASHIER.append(time_in_system)
                         # data collection for commuters
                         self.time_in_system_CASHIER.append(time_in_system)
+                        self.total_cashier_customers_serviced += 1
                      # else, add to barista queue
                     else:
                         # because if they are NOT cashier customers, they must be barista customers
@@ -611,6 +612,7 @@ class Simulation:
                         self.time_in_system_BARISTA.append(time_in_system)
                         # data collection for commuters
                         self.time_in_system_BARISTA.append(time_in_system)
+                        self.total_barista_customers_serviced += 1
 
 
     def advance_system_time(self):
@@ -677,7 +679,7 @@ class Simulation:
             self.advance_system_time()
 
         print "SIMULATION COMPLETE:"
-        print "Total revenue collected="+str(self.revenue_total)
+
 
     #############################################
     ####### DATA REPORTING AND ANALYSIS #########
@@ -690,7 +692,6 @@ class Simulation:
         print "####### SIMULATION RESULTS ########"
         print "###################################"
         print "#-----System Info-----"
-        print "Note: --> 'ARRIVED' means 'entered system' ;;; 'DEPARTED' means 'left system', whether a flight was made OR missed."
         print "Total CASHIER customers ARRIVED="+str(self.total_cashier_customers_arrived)
         print "Total CASHIER customers SERVICED="+str(self.total_cashier_customers_serviced)
         print "Total BARISTA customers ARRIVED="+str(self.total_barista_customers_arrived)
