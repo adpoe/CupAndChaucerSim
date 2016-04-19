@@ -18,7 +18,7 @@ For each passenger, also need to generate their wait times for each queue. Or is
 
 
 """
-Goals
+Goals 
 ------
 
 Generalize this code so it can be used for ANY queuing system.
@@ -368,6 +368,7 @@ class Simulation:
         self.hours_passed = 0   # = number of system iterations
         self.system_iteration = 0
         self.relative_global_time = 0.00
+        self.time_until_next_arrival_generation = 60.0
 
         #---MONEY---
         # Money variables
@@ -602,7 +603,7 @@ class Simulation:
                 # first make sure that the passenger isn't a NONE
                 if not next_customer == None:
                     # if the passenger is a commuter, they just go to gate
-                    if next_customer.type_customer == "barista":
+                    if next_customer.customer_class == "barista":
                         self.data_BARISTA_customers_moved_to_EXIT += 1
                         # data collection for coach
                         time_in_system = self.system_time - next_customer.system_time_entered
@@ -658,6 +659,7 @@ class Simulation:
         # for those arrivals
         if self.time_until_next_arrival_generation <= 0:
             self.generate_ONE_HOUR_of_arrivals()
+            self.time_until_next_arrival_generation = 60.0
 
         #print "checks if planes depart"
 
@@ -687,77 +689,46 @@ class Simulation:
         print "###################################"
         print "####### SIMULATION RESULTS ########"
         print "###################################"
-        print "#--------Money---------"
-        print "TOTAL PROFIT MADE="+str(self.revenue_total-self.money_lost_to_refunds-self.wages_paid)
-        #print "Revenue from COMMUTER flights="+str(self.commuter_revenue)
-        #print "Revenue from FIRST class INTERNATIONAL flights="+str(self.first_class_intl_revenue)
-        #print "Revenue from COACH class INTERNATIONAL flights="+str(self.coach_class_intl_revenue )
-        print "Refunds issued="+str(self.refunds_issued)
-        print "Money lost to refunds="+str(self.money_lost_to_refunds)
-        print "Wages paid, total="+str(self.wages_paid)
-        print "Number of passengers who would get a refund if they don't make it on time="+str(self.number_of_passengers_who_would_get_refund)
-        print "Confirmation number of passengers who get refund="+str(self.refund_confirmation_number)
         print "#-----System Info-----"
         print "Note: --> 'ARRIVED' means 'entered system' ;;; 'DEPARTED' means 'left system', whether a flight was made OR missed."
-        print "Total COMMUTER passengers ARRIVED="+str(self.total_cashier_customers_arrived)
-        print "Total COMMUTER passengers DEPARTED="+str(self.total_cashier_customers_serviced)
-        print "Total INTERNATIONAL first class passengers ARRIVED="+str(self.total_barista_customers_arrived)
-        print "Total INTERNATIONAL first class passengers DEPARTED="+str(self.total_barista_customers_serviced)
-        print "Total INTERNATIONAL coach class passengers ARRIVED="+str(self.total_intl_coach_passengers_arrived)
-        print "Total INTERNATIONAL coach class passengers DEPARTED="+str(self.total_intl_coach_passengers_departed)
-        total_intl_departs = self.total_barista_customers_serviced + self.total_intl_coach_passengers_departed
-        print "Total INTERNATIONAL passengers (all types) DEPARTED="+str(total_intl_departs)
+        print "Total CASHIER customers ARRIVED="+str(self.total_cashier_customers_arrived)
+        print "Total CASHIER customers SERVICED="+str(self.total_cashier_customers_serviced)
+        print "Total BARISTA customers ARRIVED="+str(self.total_barista_customers_arrived)
+        print "Total BARISTA customers SERVICED="+str(self.total_barista_customers_serviced)
+        total_customers_serviced = self.total_barista_customers_serviced + self.total_cashier_customers_serviced
+        print "Total CUSTOMERS (all types) SERVICED="+str(total_customers_serviced)
         print "-------Averages-------"
-        sum_time_in_system = sum(self.time_in_system)
+        #sum_time_in_system = sum(self.time_in_system)
         length_of_time_in_system_list = len(self.time_in_system)
-        length_of_time_in_system_list = float(length_of_time_in_system_list)
+        #length_of_time_in_system_list = float(length_of_time_in_system_list)
         #print "SUM OF TIME IN SYSTEM: "+str(sum_time_in_system)
         #print "LENGTH OF TIME IN SYSTEM: "+str(length_of_time_in_system_list)
         self.avg_time_in_system = sum(self.time_in_system)/len(self.time_in_system)
-        print "AVG Time In System for users who make it to a gate="+str(self.avg_time_in_system)
+        print "AVG Time In System for ALL CUSTOMERS (who make make it to EXIT)="+str(self.avg_time_in_system)
         self.time_in_system.sort(reverse=True)
         longest_time_in_system = self.time_in_system.pop(0)
         print "Longest time in system="+str(longest_time_in_system)
-        average_time_in_system_first_class = sum(self.time_in_system_CASHIER) / len(self.time_in_system_CASHIER)
-        print "AVG Time in system FIRST CLASS="+str(average_time_in_system_first_class)
-        average_time_in_system_coach = sum(self.time_in_system_BARISTA) / len(self.time_in_system_BARISTA)
-        print "AVG Time in system all COACH="+str(average_time_in_system_coach)
-        average_time_in_system_commuters = sum(self.time_in_system_commuter)/len(self.time_in_system_commuter)
-        print "AVG Time in system COMMUTERS="+str(average_time_in_system_commuters)
+        average_time_in_system_cashier = sum(self.time_in_system_CASHIER) / len(self.time_in_system_CASHIER)
+        print "AVG Time in system CASHIER="+str(average_time_in_system_cashier)
+        average_time_in_system_barista = sum(self.time_in_system_BARISTA) / len(self.time_in_system_BARISTA)
+        print "AVG Time in system all BARISTA="+str(average_time_in_system_barista)
         print "------Internal Mechanisms-------"
         print ".......Stage 1......"
-        print "Users added to COACH CheckInQueues="+str(self.coach_class_check_in_QUEUE.customers_added)
-        print "Users added to FIRSTCLASS CheckInQueue="+str(self.register_QUEUE.customers_added)
+        print "Customers added to RegisterQueue="+str(self.register_QUEUE.customers_added)
         print "......Stage 2......."
-        print "Users added to COACH SecurityQueue="+str(self.coach_class_security_QUEUE.customers_added)
-        print "Users added to FIRSTCLASS SecurityQueue="+str(self.barista_QUEUE.customers_added)
+        print "Customers added to BaristaQueue="+str(self.barista_QUEUE.customers_added)
         print "......Stage 3......."
-        print "Users moved to INTL_GATE="+str(self.data_BARISTA_customers_moved_to_EXIT)
-        print "Users moved to COMMUTER GATE="+str(self.data_CASHIER_customers_moved_to_EXIT)
+        print "CASHIER customers who make it to EXIT="+str(self.data_CASHIER_customers_moved_to_EXIT)
+        print "BARISTA customers who make it to EXIT="+str(self.data_BARISTA_customers_moved_to_EXIT)
         print ". . . . didn't make it . . . . ."
         still_in_system = 0
         for queue in self.queues:
             still_in_system += queue.queue.qsize()
-        waiting_at_gate = self.commuter_passengers_at_gate
-        waiting_at_gate += self.international_passengers_at_gate
-        print "Users waiting at a GATE="+str(waiting_at_gate)
         print "Users STILL in SYSTEM="+str(still_in_system)
-        print "NUMBER OF International passengers that missed their flight="+str(self.data_num_international_that_passengers_missed_flight)
-                # print shorted time in the list.... of missed int'l flights
-        # make this reverse=true to check it
-        self.INTL_passengers_who_missed_flight_and_not_refunded_time_arrived_before.sort()
-        print ". . . confirm system works . . ."
-        print "Of INTERNATIONAL passengers who missed flights and NOT refunded, \nearliest arrival was this long before " \
-              "the flight was scheduled to depart: "+str(360 - self.INTL_passengers_who_missed_flight_and_not_refunded_time_arrived_before.pop(0))
 
         print "======= GOALS ========"
-        self.likelihood_intl_passenger_catches_plane = self.data_BARISTA_customers_moved_to_EXIT / float(self.data_BARISTA_customers_moved_to_EXIT + self.data_num_international_that_passengers_missed_flight)
-        print "Likelihood that INTERNATIONAL Passenger catches plane="+str(self.likelihood_intl_passenger_catches_plane)
-        self.avg_wait_time_at_commuter_gate = self.avg_wait_time_at_commuter_gate/self.commuter_flight_departures
-        print "Post-Security Wait Time for COMMUTER Passengers, AVG="+str(self.avg_wait_time_at_commuter_gate)
         self.total_server_idle_time = 0.0
         for server in self.check_in_servers:
-            if not server.is_first_class:
                 self.total_server_idle_time += server.idle_time
         print "AGENTS' Total Idle Time="+str(self.total_server_idle_time)
         server_count = len(self.servers)
