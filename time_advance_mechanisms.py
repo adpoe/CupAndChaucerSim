@@ -464,10 +464,22 @@ class Simulation:
         self.barista_ARRIVALS = new_arrivals.barista_arrivals
         self.cashier_ARRIVALS = new_arrivals.cashier_arrivals
 
+
+        # clean up arrivals, so nothing greater 60, because we'll never reach it
+        for arrival in new_arrivals.cashier_arrivals:
+            if arrival > 60.0:
+                new_arrivals.cashier_arrivals.remove(arrival)
+
+        for arrival in new_arrivals.barista_arrivals:
+            if arrival > 60.0:
+                new_arrivals.barista_arrivals.remove(arrival)
+
+
         # Count our arrivals for data collection
         self.total_cashier_customers_arrived += len(new_arrivals.cashier_arrivals)
         self.total_barista_customers_arrived += len(new_arrivals.barista_arrivals)
-        print "arrivals generated"
+        print "arrivals generated for hour: " + str(self.hours_passed)
+
 
     def update_servers(self):
         """ Updates servers after a change of DELTA in system time
@@ -672,7 +684,7 @@ class Simulation:
             While the counter < # of days, keep generating the arrivals every 6 hours
             and stepping through the simulation
         """
-        simulation_time_in_minutes = simulation_time_in_days * 24 * 60
+        simulation_time_in_minutes = simulation_time_in_days * 24.0 * 60.0 + 60.0
         # = days * 24 hours in a day * 60 minutes in an hour
         while self.system_time < simulation_time_in_minutes:
             # then, advance system time by delta:  0.01

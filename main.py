@@ -48,7 +48,8 @@ def main():
     print "UNIVERISTY OF PITTSBURGH - SPRING 2016:: CS1538, Assignment #6"
     print "--------------------------------------------------------------"
     print ""
-    print "This program simulates the check-in process at a small local airport. "
+    print "This program simulates the service process at Cup & Chaucer Cafe in the Hillman Library" \
+          "at the University of Pittsburgh. "
     print "Throughout the process, data is collected. At the end of the simulation, the relevant"
     print "data points are output here, at the console."
     print "If you simulate more than about 7 days, please allow a few minutes of runtime, depending"
