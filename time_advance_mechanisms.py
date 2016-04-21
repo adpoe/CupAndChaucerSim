@@ -1,9 +1,4 @@
-import math
-import random
-import time
-import arrival_generation as ag
 import Queue as q
-import constants_and_params as params
 import cupAndChaucArrivs as cc
 
 """
@@ -360,6 +355,7 @@ class Simulation:
         self.data_BARISTA_customers_moved_to_EXIT = 0
         self.data_users_currently_in_system = 0
         self.total_server_idle_time = 0.0
+        self.data_num_customers_wait_over_one_min = 0
 
 
 
@@ -445,7 +441,6 @@ class Simulation:
                 self.register_QUEUE.queue.task_done()
                 # and move next passenger to server, since it isn't busy
                 self.CASHIER_server01.add_customer(next_passenger)
-
 
 
     def update_register_queues(self):
@@ -652,6 +647,7 @@ class Simulation:
             still_in_system += queue.queue.qsize()
         print "Users STILL in SYSTEM="+str(still_in_system)
 
+
         print "======= GOALS ========"
         self.total_server_idle_time = 0.0
         for server in self.check_in_servers:
@@ -660,4 +656,27 @@ class Simulation:
         server_count = len(self.servers)
         print "AGENTS AVG IDLE TIME="+str(self.total_server_idle_time/server_count)
 
-
+        print "TIMES GREATER THAN 1 MIN:"
+        wait_times_longer_than_min = []
+        wait_times_longer_than_2mins = []
+        wait_times_longer_than_3mins = []
+        wait_times_longer_than_5mins = []
+        for time in self.time_in_system:
+            if time > 1.0:
+              #  print time
+                wait_times_longer_than_min.append(time)
+            if time > 2.0:
+                wait_times_longer_than_2mins.append(time)
+            if time > 3.0:
+                wait_times_longer_than_3mins.append(time)
+            if time > 5.0:
+                wait_times_longer_than_5mins.append(time)
+        print "TOTAL WAIT TIMES LONGER THAN 1 MINUTE: " + str(len(wait_times_longer_than_min))
+        print "TOTAL WAIT TIMES LONGER THAN 2 MINUTES: " + str(len(wait_times_longer_than_2mins))
+        print "TOTAL WAIT TIMES LONGER THAN 3 MINUTES: " + str(len(wait_times_longer_than_3mins))
+        print "TOTAL WAIT TIMES LONGER THAN 5 MINUTES: " + str(len(wait_times_longer_than_3mins))
+        print "Percentage of Barista Customers who waited longer than 1 minute: " + str(float(float(len(wait_times_longer_than_min))/self.total_barista_customers_serviced))
+        print "Percentage of Barista Cusomers who waited longer than 2 minutes: " + str(float(float(len(wait_times_longer_than_2mins))/self.total_barista_customers_serviced))
+        print "Percentage of Barista Cusomers who waited longer than 3 minutes: " + str(float(float(len(wait_times_longer_than_3mins))/self.total_barista_customers_serviced))
+        print "Percentage of Barista Cusomers who waited longer than 5 minutes: " + str(float(float(len(wait_times_longer_than_5mins))/self.total_barista_customers_serviced))
+        print ""
