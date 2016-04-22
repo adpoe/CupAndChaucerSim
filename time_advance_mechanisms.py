@@ -325,10 +325,12 @@ class Simulation:
 
         # Barista Servers
         self.BARISTA_server01 = BaristaServer()
-        self.barista_servers = [self.BARISTA_server01]
+        self.BARISTA_server02 = BaristaServer()
+        self.barista_servers = [self.BARISTA_server01, self.BARISTA_server02]
         # All servers
         self.servers = [self.CASHIER_server01,
-                        self.BARISTA_server01]
+                        self.BARISTA_server01,
+                        self.BARISTA_server02]
 
 
 
@@ -674,9 +676,9 @@ class Simulation:
         print "TOTAL WAIT TIMES LONGER THAN 1 MINUTE: " + str(len(wait_times_longer_than_min))
         print "TOTAL WAIT TIMES LONGER THAN 2 MINUTES: " + str(len(wait_times_longer_than_2mins))
         print "TOTAL WAIT TIMES LONGER THAN 3 MINUTES: " + str(len(wait_times_longer_than_3mins))
-        print "TOTAL WAIT TIMES LONGER THAN 5 MINUTES: " + str(len(wait_times_longer_than_3mins))
+        print "TOTAL WAIT TIMES LONGER THAN 5 MINUTES: " + str(len(wait_times_longer_than_5mins))
         print "Percentage of Barista Customers who waited longer than 1 minute: " + str(float(float(len(wait_times_longer_than_min))/self.total_barista_customers_serviced))
-        print "Percentage of Barista Cusomers who waited longer than 2 minutes: " + str(float(float(len(wait_times_longer_than_2mins))/self.total_barista_customers_serviced))
-        print "Percentage of Barista Cusomers who waited longer than 3 minutes: " + str(float(float(len(wait_times_longer_than_3mins))/self.total_barista_customers_serviced))
-        print "Percentage of Barista Cusomers who waited longer than 5 minutes: " + str(float(float(len(wait_times_longer_than_5mins))/self.total_barista_customers_serviced))
+        print "Percentage of Barista Customers who waited longer than 2 minutes: " + str(float(float(len(wait_times_longer_than_2mins))/self.total_barista_customers_serviced))
+        print "Percentage of Barista Customers who waited longer than 3 minutes: " + str(float(float(len(wait_times_longer_than_3mins))/self.total_barista_customers_serviced))
+        print "Percentage of Barista Customers who waited longer than 5 minutes: " + str(float(float(len(wait_times_longer_than_5mins))/self.total_barista_customers_serviced))
         print ""

@@ -85,7 +85,7 @@ def create_array_of_barista_arrivals(tuple_of_arrivals):
 ##### CUP AND CHAUCER SERVICE TIME #######
 ##########################################
 def gen_cashier_service_time():
-    return np.random.exponential(1.0/0.07070707) * .01
+    return np.random.exponential(1.0/0.07070707) * 0.0166667
 
 def gen_barista_service_time():
-    return np.random.exponential(1.0/0.0248083) * .01
+    return np.random.exponential(1.0/0.0248083) * 0.0166667
