@@ -31,7 +31,7 @@ Python Modules: Random, Math, Queue
 ## Additional Notes
 The initial version of the experiment for this project is still intact, and we've included here. 
 The initial experiment can still be run, if you'd like to see how the system looked when we first ran it. 
-In order to do this, take the following steps:
+In order to do this, take the following steps: 
     1.  cd into the folder named "INITIAL_EXPERIMENT".
     2.  Run the project from within this folder:  "python main.py"
 
