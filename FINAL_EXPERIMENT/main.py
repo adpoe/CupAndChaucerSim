@@ -21,6 +21,48 @@ and increase customer throughput.
 ####################
 def main():
 
+    """# TEST OUR PROGRAM'S PIECES
+    hourly_arrivals = cc.generate_hourly_arrivals()
+    arrivals_by_type = cc.gen_customer_type_distribution(hourly_arrivals)
+
+    for arrival in arrivals_by_type:
+        print arrival
+
+    cashier_arrivals = cc.create_array_of_cashier_arrivals(arrivals_by_type)
+    barista_arrivals = cc.create_array_of_barista_arrivals(arrivals_by_type)
+
+    print "CASHIER ARRIVALS:"
+    print "------------------"
+    for arrival in cashier_arrivals:
+        print arrival
+
+    print "BARISTA ARRIVALS:"
+    print "------------------"
+    for arrival in barista_arrivals:
+        print arrival
+
+    print ""
+    print ""
+    print ""
+    count = 0
+    print "50 BARISTA SERVICE TIMES: "
+    print "--------------------------"
+    while count < 50:
+        barista_service_time = cc.gen_barista_service_time()
+        print  str(barista_service_time)
+        count += 1
+
+    print ""
+    print ""
+    count = 0
+    print "50 CASHIER SERVICE TIMES: "
+    print "--------------------------"
+    while count < 50:
+        cashier_service_time = cc.gen_cashier_service_time()
+        print str(cashier_service_time)
+        count += 1
+"""
+
     ################## UNCOMMENT TO RUN FULL SIM ################
 
     print "UNIVERISTY OF PITTSBURGH - SPRING 2016:: CS1538, Assignment #6"
