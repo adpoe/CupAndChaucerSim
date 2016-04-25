@@ -325,11 +325,17 @@ class Simulation:
 
         # Barista Servers
         self.BARISTA_server01 = BaristaServer()
-        # self.BARISTA_server02 = BaristaServer()
-        self.barista_servers = [self.BARISTA_server01]
+        self.BARISTA_server02 = BaristaServer()
+        self.BARISTA_server03 = BaristaServer()
+        self.barista_servers = [self.BARISTA_server01,
+                                self.BARISTA_server02,
+                                self.BARISTA_server03]
         # All servers
         self.servers = [self.CASHIER_server01,
-                        self.BARISTA_server01]
+                        self.BARISTA_server01,
+                        self.BARISTA_server02,
+                        self.BARISTA_server03,
+                        ]
 
 
 
